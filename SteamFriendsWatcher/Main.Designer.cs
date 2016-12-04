@@ -79,6 +79,7 @@
             this.txtAPIKey.Size = new System.Drawing.Size(109, 20);
             this.txtAPIKey.TabIndex = 5;
             this.txtAPIKey.Text = "XXXXXXXXXX";
+            this.txtAPIKey.UseSystemPasswordChar = true;
             // 
             // label2
             // 
