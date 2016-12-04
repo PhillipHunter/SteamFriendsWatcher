@@ -11,6 +11,7 @@ namespace SteamFriendsWatcher
         {
             InitializeComponent();
             _SteamFriendsWatcher = new SteamFriendsWatcher(this);
+
         }
 
         public void InitializeUserSettings(String apiKey, String userSteamid)
@@ -37,6 +38,20 @@ namespace SteamFriendsWatcher
         private void btnCheck_Click(object sender, EventArgs e)
         {
             _SteamFriendsWatcher.Check(txtAPIKey.Text, txtSteamID.Text);
+        }
+
+        public void AddMessageLine(String line, String color)
+        {
+            this.Invoke(new MethodInvoker( 
+                delegate 
+                {
+                    webBrowser1.Document.Body.InnerHtml += $"<b><font face='Arial', font color=\"{color}\">{line.Replace("\n", "<br/>")}</font><br/></b>";
+                }));
+        }
+
+        public void ClearMessages()
+        {
+            webBrowser1.Document.Body.InnerHtml = String.Empty;
         }
     }
 }

@@ -34,6 +34,7 @@
             this.progressBar1 = new System.Windows.Forms.ProgressBar();
             this.txtAPIKey = new System.Windows.Forms.TextBox();
             this.label2 = new System.Windows.Forms.Label();
+            this.webBrowser1 = new System.Windows.Forms.WebBrowser();
             this.SuspendLayout();
             // 
             // label1
@@ -55,7 +56,7 @@
             // 
             // btnCheck
             // 
-            this.btnCheck.Location = new System.Drawing.Point(405, 83);
+            this.btnCheck.Location = new System.Drawing.Point(745, 410);
             this.btnCheck.Name = "btnCheck";
             this.btnCheck.Size = new System.Drawing.Size(75, 23);
             this.btnCheck.TabIndex = 2;
@@ -65,9 +66,9 @@
             // 
             // progressBar1
             // 
-            this.progressBar1.Location = new System.Drawing.Point(15, 83);
+            this.progressBar1.Location = new System.Drawing.Point(15, 410);
             this.progressBar1.Name = "progressBar1";
-            this.progressBar1.Size = new System.Drawing.Size(384, 23);
+            this.progressBar1.Size = new System.Drawing.Size(724, 23);
             this.progressBar1.TabIndex = 3;
             // 
             // txtAPIKey
@@ -87,11 +88,22 @@
             this.label2.TabIndex = 4;
             this.label2.Text = "API Key:";
             // 
+            // webBrowser1
+            // 
+            this.webBrowser1.Location = new System.Drawing.Point(15, 58);
+            this.webBrowser1.MinimumSize = new System.Drawing.Size(20, 20);
+            this.webBrowser1.Name = "webBrowser1";
+            this.webBrowser1.ScriptErrorsSuppressed = true;
+            this.webBrowser1.Size = new System.Drawing.Size(805, 346);
+            this.webBrowser1.TabIndex = 6;
+            this.webBrowser1.Url = new System.Uri("", System.UriKind.Relative);
+            // 
             // Main
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(489, 118);
+            this.ClientSize = new System.Drawing.Size(832, 445);
+            this.Controls.Add(this.webBrowser1);
             this.Controls.Add(this.txtAPIKey);
             this.Controls.Add(this.label2);
             this.Controls.Add(this.progressBar1);
@@ -114,6 +126,7 @@
         private System.Windows.Forms.ProgressBar progressBar1;
         private System.Windows.Forms.TextBox txtAPIKey;
         private System.Windows.Forms.Label label2;
+        private System.Windows.Forms.WebBrowser webBrowser1;
     }
 }
 

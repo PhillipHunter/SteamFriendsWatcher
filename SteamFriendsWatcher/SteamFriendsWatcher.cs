@@ -37,14 +37,12 @@ namespace SteamFriendsWatcher
 
         private void CheckWorker_DoWork(object sender, DoWorkEventArgs e)
         {
-            Console.WriteLine("Checking friends of SteamID " + userSteamID);
+            _ISteamFriendsWatcher.AddMessageLine("Checking friends of SteamID " + userSteamID);
 
             try
             {
                 using (WebClient _WebClient = new WebClient())
                 {
-                    Console.WriteLine();
-
                     String oldFriendsJSON = null;
 
                     if (File.Exists(OLD_FRIENDS_FILE_PATH))
@@ -58,16 +56,16 @@ namespace SteamFriendsWatcher
                     currentFriends = GetFriendsFromJSON(currentFriendsJSON);
                     oldFriends = (oldFriendsJSON == null) ? currentFriends : GetFriendsFromJSON(oldFriendsJSON);
 
-                    Console.WriteLine($"Old Friends Count: {oldFriends.Count}");
-                    Console.WriteLine($"Current Friends Count: {currentFriends.Count}");
+                    _ISteamFriendsWatcher.AddMessageLine($"Old Friends Count: {oldFriends.Count}");
+                    _ISteamFriendsWatcher.AddMessageLine($"Current Friends Count: {currentFriends.Count}");
 
                     if (oldFriends.SequenceEqual<Friend>(currentFriends))
                     {
-                        Console.WriteLine("No changes to friends list.\n");
+                        _ISteamFriendsWatcher.AddMessageLine("No changes to friends list.\n");
                     }
                     else
                     {
-                        Console.WriteLine("Friends list has changed!");
+                        _ISteamFriendsWatcher.AddMessageLine("Friends list has changed!", "orange");
 
                         List<Friend> friendsAdded = new List<Friend>();
                         foreach (Friend curr in currentFriends)
@@ -78,7 +76,7 @@ namespace SteamFriendsWatcher
                                 friendsAdded.Add(curr);
                             }
                         }
-                        Console.WriteLine($"\nFriends Added - {friendsAdded.Count}");
+                        _ISteamFriendsWatcher.AddMessageLine($"\nFriends Added - {friendsAdded.Count}", "green");
                         PrintListOfFriends(friendsAdded);
 
                         List<Friend> friendsRemoved = new List<Friend>();
@@ -90,7 +88,7 @@ namespace SteamFriendsWatcher
                                 friendsRemoved.Add(curr);
                             }
                         }
-                        Console.WriteLine($"\nFriends Removed - {friendsRemoved.Count}");
+                        _ISteamFriendsWatcher.AddMessageLine($"\nFriends Removed - {friendsRemoved.Count}", "red");
                         PrintListOfFriends(friendsRemoved);                                            
                     }
                 }
@@ -132,12 +130,14 @@ namespace SteamFriendsWatcher
 
         public void Check(String apiKey, String steamID)
         {
+            //TODO: Fix issue with switching userids.                        
             File.WriteAllText(SETTINGS_FILE_PATH, $"{apiKey},{steamID}");
 
             this.apiKey = apiKey;
             this.userSteamID = steamID;
-
+            
             _ISteamFriendsWatcher.StartCheck();
+            _ISteamFriendsWatcher.ClearMessages();
             checkWorker.RunWorkerAsync();
         }
 
@@ -179,7 +179,7 @@ namespace SteamFriendsWatcher
         {
             for(int i = 0; i < list.Count; i++)
             {
-                Console.WriteLine($"{i + 1} / {list.Count}: {list[i]}");
+                _ISteamFriendsWatcher.AddMessageLine($"{i + 1} / {list.Count}: {list[i]}");
             }
         }
     }    
@@ -190,5 +190,7 @@ namespace SteamFriendsWatcher
         void StartCheck();
         void StopCheck();
         void UpdateProgress(int progress);
+        void AddMessageLine(String line, String color = "black");
+        void ClearMessages();
     }
 }
