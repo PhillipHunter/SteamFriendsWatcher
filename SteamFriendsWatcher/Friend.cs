@@ -19,7 +19,7 @@ namespace SteamFriendsWatcher
 
         public override string ToString()
         {
-            return $"{name} SteamID: {steamid} Friends Since: {friendsince}";
+            return $"{name} SteamID: {steamid} Friends Since: {DateTimeOffset.FromUnixTimeSeconds(friendsince).Date.ToShortDateString()}";
         }
     }
 }
