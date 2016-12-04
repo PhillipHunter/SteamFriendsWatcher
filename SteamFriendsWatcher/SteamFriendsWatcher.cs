@@ -11,6 +11,7 @@ namespace SteamFriendsWatcher
     class SteamFriendsWatcher
     {
         private const String SETTINGS_FILE_PATH = "settings.csv";
+        private const String LOG_FILE_PATH = "log.txt";
         private const String OLD_FRIENDS_FILE_PATH = "oldFriends.json";
         private ISteamFriendsWatcher _ISteamFriendsWatcher;
         private BackgroundWorker checkWorker = new BackgroundWorker();
@@ -27,6 +28,11 @@ namespace SteamFriendsWatcher
                 File.WriteAllText(SETTINGS_FILE_PATH, "APIKEY,STEAMID");
             }
 
+            if (!File.Exists(LOG_FILE_PATH))
+            {
+                File.Create(LOG_FILE_PATH);
+            }
+
             this._ISteamFriendsWatcher = _ISteamFriendsWatcher;
             _ISteamFriendsWatcher.InitializeUserSettings(File.ReadAllText(SETTINGS_FILE_PATH).Split(',')[0], File.ReadAllText(SETTINGS_FILE_PATH).Split(',')[1]);
             checkWorker.WorkerReportsProgress = true;
@@ -37,7 +43,7 @@ namespace SteamFriendsWatcher
 
         private void CheckWorker_DoWork(object sender, DoWorkEventArgs e)
         {
-            _ISteamFriendsWatcher.AddMessageLine("Checking friends of SteamID " + userSteamID);
+            AddMessageLine("Checking friends of SteamID " + userSteamID);
 
             try
             {
@@ -56,16 +62,16 @@ namespace SteamFriendsWatcher
                     currentFriends = GetFriendsFromJSON(currentFriendsJSON);
                     oldFriends = (oldFriendsJSON == null) ? currentFriends : GetFriendsFromJSON(oldFriendsJSON);
 
-                    _ISteamFriendsWatcher.AddMessageLine($"Old Friends Count: {oldFriends.Count}");
-                    _ISteamFriendsWatcher.AddMessageLine($"Current Friends Count: {currentFriends.Count}");
+                    AddMessageLine($"Old Friends Count: {oldFriends.Count}");
+                    AddMessageLine($"Current Friends Count: {currentFriends.Count}");
 
                     if (oldFriends.SequenceEqual<Friend>(currentFriends))
                     {
-                        _ISteamFriendsWatcher.AddMessageLine("No changes to friends list.\n");
+                        AddMessageLine("No changes to friends list.\n");
                     }
                     else
                     {
-                        _ISteamFriendsWatcher.AddMessageLine("Friends list has changed!", "orange");
+                        AddMessageLine("Friends list has changed!", "orange");
 
                         List<Friend> friendsAdded = new List<Friend>();
                         foreach (Friend curr in currentFriends)
@@ -76,7 +82,7 @@ namespace SteamFriendsWatcher
                                 friendsAdded.Add(curr);
                             }
                         }
-                        _ISteamFriendsWatcher.AddMessageLine($"\nFriends Added - {friendsAdded.Count}", "green");
+                        AddMessageLine($"\nFriends Added - {friendsAdded.Count}", "green");
                         PrintListOfFriends(friendsAdded);
 
                         List<Friend> friendsRemoved = new List<Friend>();
@@ -88,7 +94,7 @@ namespace SteamFriendsWatcher
                                 friendsRemoved.Add(curr);
                             }
                         }
-                        _ISteamFriendsWatcher.AddMessageLine($"\nFriends Removed - {friendsRemoved.Count}", "red");
+                        AddMessageLine($"\nFriends Removed - {friendsRemoved.Count}", "red");
                         PrintListOfFriends(friendsRemoved);                                            
                     }
                 }
@@ -179,8 +185,18 @@ namespace SteamFriendsWatcher
         {
             for(int i = 0; i < list.Count; i++)
             {
-                _ISteamFriendsWatcher.AddMessageLine($"{i + 1} / {list.Count}: {list[i]}");
+                AddMessageLine($"{i + 1} / {list.Count}: {list[i]}");
             }
+        }
+
+        public void AddMessageLine(String line, String color = "black")
+        {
+            if(!String.IsNullOrWhiteSpace(line))
+            {
+                File.AppendAllText(LOG_FILE_PATH, $"{DateTime.Now.ToString()} - {line}\n", System.Text.Encoding.UTF8);
+            }
+            
+            _ISteamFriendsWatcher.AddMessageLine(line, color);
         }
     }    
 
