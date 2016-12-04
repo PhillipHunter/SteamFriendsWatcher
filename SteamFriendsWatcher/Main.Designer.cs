@@ -28,6 +28,7 @@
         /// </summary>
         private void InitializeComponent()
         {
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(Main));
             this.label1 = new System.Windows.Forms.Label();
             this.txtSteamID = new System.Windows.Forms.TextBox();
             this.btnCheck = new System.Windows.Forms.Button();
@@ -111,6 +112,7 @@
             this.Controls.Add(this.txtSteamID);
             this.Controls.Add(this.label1);
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedToolWindow;
+            this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.Name = "Main";
             this.Text = "Steam Friends Watcher";
             this.ResumeLayout(false);
