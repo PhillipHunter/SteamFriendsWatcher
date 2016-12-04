@@ -10,13 +10,15 @@ namespace SteamFriendsWatcher
 {
     class SteamFriendsWatcher
     {
-        private const String SETTINGS_FILE_PATH = "settings.txt";
+        private const String SETTINGS_FILE_PATH = "settings.csv";
+        private const String OLD_FRIENDS_FILE_PATH = "oldFriends.json";
         private ISteamFriendsWatcher _ISteamFriendsWatcher;
         private BackgroundWorker checkWorker = new BackgroundWorker();
 
         private String apiKey;
         private String userSteamID;
-        private List<Friend> friends = new List<Friend>();
+        private List<Friend> oldFriends = null;
+        private List<Friend> currentFriends = new List<Friend>();
 
         public SteamFriendsWatcher(ISteamFriendsWatcher _ISteamFriendsWatcher)
         {
@@ -42,23 +44,54 @@ namespace SteamFriendsWatcher
                 using (WebClient _WebClient = new WebClient())
                 {
                     Console.WriteLine();
-                    String full = _WebClient.DownloadString($"http://api.steampowered.com/ISteamUser/GetFriendList/v0001/?key={apiKey}&steamid={userSteamID}&relationship=friend");
-                    JToken Jfriends = (JObject.Parse(full)["friendslist"])["friends"];
-                    List<JToken> JfriendsList = Jfriends.Children().ToList();
 
-                    friends.Clear();
-                    foreach (JToken curr in JfriendsList)
+                    String oldFriendsJSON = null;
+
+                    if (File.Exists(OLD_FRIENDS_FILE_PATH))
                     {
-                        Friend currFriend = new Friend();
-                        currFriend.steamid = (String)curr["steamid"];
-                        currFriend.friendsince = Int64.Parse((String)curr["friend_since"]);
+                        oldFriendsJSON = File.ReadAllText(OLD_FRIENDS_FILE_PATH);
+                    }
 
-                        String personaFull = _WebClient.DownloadString($"http://api.steampowered.com/ISteamUser/GetPlayerSummaries/v0002/?key={apiKey}&steamids={currFriend.steamid}");
-                        currFriend.name = (String)(((JObject.Parse(personaFull)["response"])["players"])[0])["personaname"];
+                    String currentFriendsJSON = _WebClient.DownloadString($"http://api.steampowered.com/ISteamUser/GetFriendList/v0001/?key={apiKey}&steamid={userSteamID}&relationship=friend");
+                    File.WriteAllText(OLD_FRIENDS_FILE_PATH, currentFriendsJSON);
+                   
+                    currentFriends = GetFriendsFromJSON(currentFriendsJSON);
+                    oldFriends = (oldFriendsJSON == null) ? currentFriends : GetFriendsFromJSON(oldFriendsJSON);
 
-                        Console.WriteLine($"{friends.Count + 1} / {JfriendsList.Count}:  {currFriend}");
-                        checkWorker.ReportProgress((int)(100 * ((float)(friends.Count + 1)) / (JfriendsList.Count)));
-                        friends.Add(currFriend);
+                    Console.WriteLine($"Old Friends Count: {oldFriends.Count}");
+                    Console.WriteLine($"Current Friends Count: {currentFriends.Count}");
+
+                    if (oldFriends.SequenceEqual<Friend>(currentFriends))
+                    {
+                        Console.WriteLine("No changes to friends list.\n");
+                    }
+                    else
+                    {
+                        Console.WriteLine("Friends list has changed!");
+
+                        List<Friend> friendsAdded = new List<Friend>();
+                        foreach (Friend curr in currentFriends)
+                        {
+                            if (!oldFriends.Contains(curr))
+                            {
+                                curr.name = GetNameFromSteamID(curr.steamid);
+                                friendsAdded.Add(curr);
+                            }
+                        }
+                        Console.WriteLine($"\nFriends Added - {friendsAdded.Count}");
+                        PrintListOfFriends(friendsAdded);
+
+                        List<Friend> friendsRemoved = new List<Friend>();
+                        foreach(Friend curr in oldFriends)
+                        {
+                            if(!currentFriends.Contains(curr))
+                            {
+                                curr.name = GetNameFromSteamID(curr.steamid);
+                                friendsRemoved.Add(curr);
+                            }
+                        }
+                        Console.WriteLine($"\nFriends Removed - {friendsRemoved.Count}");
+                        PrintListOfFriends(friendsRemoved);                                            
                     }
                 }
             }
@@ -107,7 +140,49 @@ namespace SteamFriendsWatcher
             _ISteamFriendsWatcher.StartCheck();
             checkWorker.RunWorkerAsync();
         }
-    }
+
+        public List<Friend> GetFriendsFromJSON(String json)
+        {
+            JToken Jfriends = (JObject.Parse(json)["friendslist"])["friends"];
+            List<JToken> JfriendsList = Jfriends.Children().ToList();
+
+            List<Friend> result = new List<Friend>();
+            foreach (JToken curr in JfriendsList)
+            {
+                Friend currFriend = new Friend();
+                currFriend.steamid = (String)curr["steamid"];
+                currFriend.friendsince = Int64.Parse((String)curr["friend_since"]);
+                checkWorker.ReportProgress((int)(100 * ((float)(result.Count + 1)) / (JfriendsList.Count)));
+                result.Add(currFriend);
+            }
+
+            return result;
+        }
+
+        public String GetNameFromSteamID(String steamID)
+        {
+            try
+            {
+                using (WebClient _WebClient = new WebClient())
+                {
+                    String personaFull = _WebClient.DownloadString($"http://api.steampowered.com/ISteamUser/GetPlayerSummaries/v0002/?key={apiKey}&steamids={steamID}");
+                    return (String)(((JObject.Parse(personaFull)["response"])["players"])[0])["personaname"];
+                }
+            }
+            catch (Exception)
+            {
+                return "NAME_UNKNOWN";
+            }
+        }
+
+        public void PrintListOfFriends(List<Friend> list)
+        {
+            for(int i = 0; i < list.Count; i++)
+            {
+                Console.WriteLine($"{i + 1} / {list.Count}: {list[i]}");
+            }
+        }
+    }    
 
     public interface ISteamFriendsWatcher
     {

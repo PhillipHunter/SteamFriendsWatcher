@@ -12,6 +12,11 @@ namespace SteamFriendsWatcher
         public String steamid;
         public Int64 friendsince;
 
+        public override bool Equals(object obj)
+        {
+            return steamid.Equals(((Friend)obj).steamid);
+        }
+
         public override string ToString()
         {
             return $"{name} SteamID: {steamid} Friends Since: {friendsince}";
