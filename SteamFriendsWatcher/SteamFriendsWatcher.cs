@@ -12,7 +12,8 @@ namespace SteamFriendsWatcher
     {
         private const String SETTINGS_FILE_PATH = "settings.csv";
         private const String LOG_FILE_PATH = "log.txt";
-        private const String OLD_FRIENDS_FILE_PATH = "oldFriends.json";
+        private const String OLD_FRIENDS_FOLDER_PATH = "data";
+        private String oldFriendsFilePath;
         private ISteamFriendsWatcher _ISteamFriendsWatcher;
         private BackgroundWorker checkWorker = new BackgroundWorker();
 
@@ -43,7 +44,7 @@ namespace SteamFriendsWatcher
 
         private void CheckWorker_DoWork(object sender, DoWorkEventArgs e)
         {
-            AddMessageLine("Checking friends of SteamID " + userSteamID);
+            AddMessageLine($"Checking friends of user: {GetNameFromSteamID(userSteamID)} SteamID: {userSteamID}");
 
             try
             {
@@ -51,13 +52,14 @@ namespace SteamFriendsWatcher
                 {
                     String oldFriendsJSON = null;
 
-                    if (File.Exists(OLD_FRIENDS_FILE_PATH))
+                    if (File.Exists(oldFriendsFilePath))
                     {
-                        oldFriendsJSON = File.ReadAllText(OLD_FRIENDS_FILE_PATH);
+                        oldFriendsJSON = File.ReadAllText(oldFriendsFilePath);
                     }
 
                     String currentFriendsJSON = _WebClient.DownloadString($"http://api.steampowered.com/ISteamUser/GetFriendList/v0001/?key={apiKey}&steamid={userSteamID}&relationship=friend");
-                    File.WriteAllText(OLD_FRIENDS_FILE_PATH, currentFriendsJSON);
+                    Directory.CreateDirectory(OLD_FRIENDS_FOLDER_PATH);
+                    File.WriteAllText(oldFriendsFilePath, currentFriendsJSON);
                    
                     currentFriends = GetFriendsFromJSON(currentFriendsJSON);
                     oldFriends = (oldFriendsJSON == null) ? currentFriends : GetFriendsFromJSON(oldFriendsJSON);
@@ -106,21 +108,21 @@ namespace SteamFriendsWatcher
                     HttpStatusCode code = ((HttpWebResponse)ex.Response).StatusCode;
                     if (code == HttpStatusCode.Forbidden)
                     {
-                        Console.WriteLine($"Could not retreive friends list. Is your API key correct?\n");
+                        AddMessageLine($"Could not retreive friends list. Is your API key correct?\n", "red");
                     }
                     else if (code == HttpStatusCode.InternalServerError)
                     {
-                        Console.WriteLine($"Could not retreive friends list. Is your SteamID correct?\n");
+                        AddMessageLine($"Could not retreive friends list. Is your SteamID correct?\n", "red");
                     }
                     else
                     {
-                        Console.WriteLine($"Could not retreive friends list. {ex.Message}\n");
+                        AddMessageLine($"Could not retreive friends list. {ex.Message}\n", "red");
                     }
                 }
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Could not retreive friends list. {ex.Message}\n");
+                AddMessageLine($"Could not retreive friends list. {ex.Message}\n", "red");
             }
         }
 
@@ -135,12 +137,12 @@ namespace SteamFriendsWatcher
         }
 
         public void Check(String apiKey, String steamID)
-        {
-            //TODO: Fix issue with switching userids.                        
+        {    
             File.WriteAllText(SETTINGS_FILE_PATH, $"{apiKey},{steamID}");
 
             this.apiKey = apiKey;
             this.userSteamID = steamID;
+            oldFriendsFilePath = $"{OLD_FRIENDS_FOLDER_PATH}\\{userSteamID}.json";
             
             _ISteamFriendsWatcher.StartCheck();
             _ISteamFriendsWatcher.ClearMessages();
@@ -195,6 +197,8 @@ namespace SteamFriendsWatcher
             {
                 File.AppendAllText(LOG_FILE_PATH, $"{DateTime.Now.ToString()} - {line}\n", System.Text.Encoding.UTF8);
             }
+
+            Console.WriteLine(line);
             
             _ISteamFriendsWatcher.AddMessageLine(line, color);
         }
