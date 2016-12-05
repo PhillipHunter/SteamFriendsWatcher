@@ -16,11 +16,13 @@ namespace SteamFriendsWatcher
         private String oldFriendsFilePath;
         private ISteamFriendsWatcher _ISteamFriendsWatcher;
         private BackgroundWorker checkWorker = new BackgroundWorker();
+        private BackgroundWorker nameGeneratorWorker = new BackgroundWorker();
 
         private String apiKey;
         private String userSteamID;
         private List<Friend> oldFriends = null;
         private List<Friend> currentFriends = new List<Friend>();
+        public Boolean namesGenerated = false;
 
         public SteamFriendsWatcher(ISteamFriendsWatcher _ISteamFriendsWatcher)
         {
@@ -40,6 +42,11 @@ namespace SteamFriendsWatcher
             checkWorker.DoWork += CheckWorker_DoWork;
             checkWorker.RunWorkerCompleted += CheckWorker_RunWorkerCompleted;
             checkWorker.ProgressChanged += CheckWorker_ProgressChanged;
+
+            nameGeneratorWorker.DoWork += NameGeneratorWorker_DoWork;
+            nameGeneratorWorker.WorkerReportsProgress = true;
+            nameGeneratorWorker.ProgressChanged += NameGeneratorWorker_ProgressChanged;
+            nameGeneratorWorker.RunWorkerCompleted += NameGeneratorWorker_RunWorkerCompleted;
         }
 
         private void CheckWorker_DoWork(object sender, DoWorkEventArgs e)
@@ -60,7 +67,7 @@ namespace SteamFriendsWatcher
                     String currentFriendsJSON = _WebClient.DownloadString($"http://api.steampowered.com/ISteamUser/GetFriendList/v0001/?key={apiKey}&steamid={userSteamID}&relationship=friend");
                     Directory.CreateDirectory(OLD_FRIENDS_FOLDER_PATH);
                     File.WriteAllText(oldFriendsFilePath, currentFriendsJSON);
-                   
+
                     currentFriends = GetFriendsFromJSON(currentFriendsJSON);
                     oldFriends = (oldFriendsJSON == null) ? currentFriends : GetFriendsFromJSON(oldFriendsJSON);
 
@@ -88,16 +95,16 @@ namespace SteamFriendsWatcher
                         PrintListOfFriends(friendsAdded);
 
                         List<Friend> friendsRemoved = new List<Friend>();
-                        foreach(Friend curr in oldFriends)
+                        foreach (Friend curr in oldFriends)
                         {
-                            if(!currentFriends.Contains(curr))
+                            if (!currentFriends.Contains(curr))
                             {
                                 curr.name = GetNameFromSteamID(curr.steamid);
                                 friendsRemoved.Add(curr);
                             }
                         }
                         AddMessageLine($"\nFriends Removed - {friendsRemoved.Count}", "red");
-                        PrintListOfFriends(friendsRemoved);                                            
+                        PrintListOfFriends(friendsRemoved);
                     }
                 }
             }
@@ -136,14 +143,17 @@ namespace SteamFriendsWatcher
             _ISteamFriendsWatcher.StopCheck();
         }
 
-        public void Check(String apiKey, String steamID)
-        {    
-            File.WriteAllText(SETTINGS_FILE_PATH, $"{apiKey},{steamID}");
+        public void Check(String apiKey, String steamID, Boolean saveUserSettings = true)
+        {
+            if (saveUserSettings)
+            {
+                File.WriteAllText(SETTINGS_FILE_PATH, $"{apiKey},{steamID}");
+            }
 
             this.apiKey = apiKey;
             this.userSteamID = steamID;
             oldFriendsFilePath = $"{OLD_FRIENDS_FOLDER_PATH}\\{userSteamID}.json";
-            
+
             _ISteamFriendsWatcher.StartCheck();
             _ISteamFriendsWatcher.ClearMessages();
             checkWorker.RunWorkerAsync();
@@ -183,9 +193,39 @@ namespace SteamFriendsWatcher
             }
         }
 
+        public List<Friend> GetUsersFriends()
+        {
+            return currentFriends;
+        }
+
+        public void GenerateAllFriendNames()
+        {
+            nameGeneratorWorker.RunWorkerAsync();
+        }
+
+        private void NameGeneratorWorker_DoWork(object sender, DoWorkEventArgs e)
+        {
+            for (int i = 0; i < currentFriends.Count; i++)
+            {
+                nameGeneratorWorker.ReportProgress((int)(100 * ((float)(i + 1)) / (currentFriends.Count)));
+                currentFriends[i].name = GetNameFromSteamID(currentFriends[i].steamid);
+            }
+        }
+
+        private void NameGeneratorWorker_ProgressChanged(object sender, ProgressChangedEventArgs e)
+        {
+            _ISteamFriendsWatcher.UpdateProgress(e.ProgressPercentage);
+        }
+
+        private void NameGeneratorWorker_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
+        {
+            _ISteamFriendsWatcher.StopNameGeneration();
+            namesGenerated = true;
+        }
+
         public void PrintListOfFriends(List<Friend> list)
         {
-            for(int i = 0; i < list.Count; i++)
+            for (int i = 0; i < list.Count; i++)
             {
                 AddMessageLine($"{i + 1} / {list.Count}: {list[i]}");
             }
@@ -193,16 +233,16 @@ namespace SteamFriendsWatcher
 
         public void AddMessageLine(String line, String color = "black")
         {
-            if(!String.IsNullOrWhiteSpace(line))
+            if (!String.IsNullOrWhiteSpace(line))
             {
                 File.AppendAllText(LOG_FILE_PATH, $"{DateTime.Now.ToString()} - {line}\n", System.Text.Encoding.UTF8);
             }
 
             Console.WriteLine(line);
-            
+
             _ISteamFriendsWatcher.AddMessageLine(line, color);
         }
-    }    
+    }
 
     public interface ISteamFriendsWatcher
     {
@@ -212,5 +252,6 @@ namespace SteamFriendsWatcher
         void UpdateProgress(int progress);
         void AddMessageLine(String line, String color = "black");
         void ClearMessages();
+        void StopNameGeneration();
     }
 }
