@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net;
@@ -228,6 +229,14 @@ namespace SteamFriendsWatcher
             for (int i = 0; i < list.Count; i++)
             {
                 AddMessageLine($"{i + 1} / {list.Count}: {list[i]}");
+            }
+        }
+
+        public void OpenLogFile()
+        {
+            if(File.Exists(LOG_FILE_PATH))
+            {
+                Process.Start(LOG_FILE_PATH);
             }
         }
 

@@ -107,5 +107,10 @@ namespace SteamFriendsWatcher
         {
             RefreshFriendsComboBox();
         }
+
+        private void btnOpenLog_Click(object sender, EventArgs e)
+        {
+            _SteamFriendsWatcher.OpenLogFile();
+        }
     }
 }

@@ -39,6 +39,7 @@
             this.cboFriends = new System.Windows.Forms.ComboBox();
             this.chkFriendsFriends = new System.Windows.Forms.CheckBox();
             this.btnRefreshFriendsCBO = new System.Windows.Forms.Button();
+            this.btnOpenLog = new System.Windows.Forms.Button();
             this.SuspendLayout();
             // 
             // label1
@@ -138,11 +139,22 @@
             this.btnRefreshFriendsCBO.Visible = false;
             this.btnRefreshFriendsCBO.Click += new System.EventHandler(this.btnRefreshFriendsCBO_Click);
             // 
+            // btnOpenLog
+            // 
+            this.btnOpenLog.Location = new System.Drawing.Point(729, 29);
+            this.btnOpenLog.Name = "btnOpenLog";
+            this.btnOpenLog.Size = new System.Drawing.Size(91, 23);
+            this.btnOpenLog.TabIndex = 11;
+            this.btnOpenLog.Text = "Open Log";
+            this.btnOpenLog.UseVisualStyleBackColor = true;
+            this.btnOpenLog.Click += new System.EventHandler(this.btnOpenLog_Click);
+            // 
             // Main
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(832, 445);
+            this.Controls.Add(this.btnOpenLog);
             this.Controls.Add(this.btnRefreshFriendsCBO);
             this.Controls.Add(this.chkFriendsFriends);
             this.Controls.Add(this.cboFriends);
@@ -174,6 +186,7 @@
         private System.Windows.Forms.ComboBox cboFriends;
         private System.Windows.Forms.CheckBox chkFriendsFriends;
         private System.Windows.Forms.Button btnRefreshFriendsCBO;
+        private System.Windows.Forms.Button btnOpenLog;
     }
 }
 
