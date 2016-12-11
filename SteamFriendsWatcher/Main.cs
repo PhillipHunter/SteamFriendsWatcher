@@ -44,7 +44,15 @@ namespace SteamFriendsWatcher
             }
             else
             {
-                new SteamFriendsWatcher(this).Check(txtAPIKey.Text, _SteamFriendsWatcher.GetUsersFriends()[cboFriends.SelectedIndex].steamid, false);
+                if (cboFriends.SelectedIndex != -1)
+                {
+                    new SteamFriendsWatcher(this).Check(txtAPIKey.Text, _SteamFriendsWatcher.GetUsersFriends()[cboFriends.SelectedIndex].steamid, false);
+                }
+                else
+                {
+                    ClearMessages();
+                    AddMessageLine("Please select a friend to view the friends of.", "red");
+                }
             }
         }
 
